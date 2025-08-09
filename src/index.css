@@ -94,6 +94,7 @@ button:focus-visible {
   max-width: 480px;
   width: 100%;
 }
+
 .login-input {
   width: 100%;
   max-width: 360px;
@@ -117,3 +118,164 @@ button:focus-visible {
   transition: background 0.2s;
 }
 .login-button:hover { background-color: #0d3557; }
+
+/* Page container */
+.hp-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Responsive grid of cards */
+.hp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* Card */
+.hp-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  padding: 20px;
+}
+
+/* Card header */
+.hp-card h3 {
+  margin: 0 0 12px;
+  color: #0B1E3C;
+}
+
+/* KPI row with fixed column widths */
+.hp-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed rgba(0,0,0,0.06);
+}
+.hp-row:last-child { border-bottom: none; }
+
+.hp-row-label {
+  flex: 0 0 300px;
+  text-align: left;
+  color: #333;
+}
+
+.hp-row-value {
+  flex: 0 0 100px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.hp-row-comment {
+  flex: 1;
+  text-align: left;
+  font-style: italic;
+  color: #555;
+  margin-left: 30px; /* pushes comments further right */
+}
+
+/* Session selector area */
+.hp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 0 20px;
+}
+.hp-select {
+  font-size: 1rem;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* Section heading */
+.hp-section-title {
+  color: #fff;
+  margin: 20px 0 10px;
+  font-size: 1.7rem;
+  font-weight: 900;
+}
+
+/* Card content look */
+.hp-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 6px 0 2px;
+}
+.hp-comment {
+  margin: 0;
+  color: #465360;
+  font-style: italic;
+  line-height: 1.35;
+}
+
+/* Grid (horizontal tiles) */
+.hp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+.hp-card { 
+  background:#fff; border-radius:16px; box-shadow:0 8px 20px rgba(0,0,0,.12);
+  padding:16px; display:flex; flex-direction:column; gap:6px;
+}
+.hp-card h3 { margin:0; color:#0B1E3C; font-size:1rem; font-weight:800; }
+
+/* Sectional Times: keep headings bold but make numbers normal */
+.sectional-times .hp-row-value {
+  font-weight: normal;
+}
+/* Make sectional tiles use compact rows so values show up */
+.sectional-times .hp-row {
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+.sectional-times .hp-row-label {
+  flex: 0 0 auto;       /* no fixed 300px */
+  text-align: center;
+}
+.sectional-times .hp-row-value {
+  flex: 0 0 auto;       /* no fixed 100–140px */
+  text-align: center;
+  font-weight: normal;  /* keep not-bold */
+}
+.sectional-times .hp-row-comment {
+  display: none;        /* hide comments in tiny tiles */
+}
+
+/* Sectional stat tiles: lighter border, centered content */
+.hp-card.sectional-card {
+  border: 1px solid rgba(11, 30, 60, 0.15);   /* lighter than main cards */
+  align-items: center;
+  justify-content: center;                    /* vertically center content */
+  text-align: center;
+  min-height: 140px;                          /* consistent tile height */
+  gap: 10px;
+  padding: 20px;
+}
+
+/* Tile heading */
+.hp-card.sectional-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0B1E3C;
+}
+
+/* Big time value (not bold) with tabular digits for neat colons */
+.stat-value {
+  font-size: 2.4rem;                          /* bigger value */
+  font-weight: 400;                           /* not bold */
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;         /* align digits nicely */
+  -webkit-font-smoothing: antialiased;
+  margin-top: 8px;                            /* space below heading */
+}

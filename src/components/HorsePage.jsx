@@ -1,7 +1,6 @@
 import React, { useState, useLayoutEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useData } from "../DataContext";
-// Auth for logout
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 
@@ -11,7 +10,6 @@ export default function HorsePage() {
   const navigate = useNavigate();
   const [selectedSessionIndex, setSelectedSessionIndex] = useState(0);
 
-  const horses = [...new Set(data.map((d) => d.Horse))].filter(Boolean);
   const sessions = data.filter(
     (row) =>
       row.Horse?.trim().toLowerCase() === horseName?.trim().toLowerCase()
@@ -50,7 +48,7 @@ export default function HorsePage() {
     );
     const last4 = past.slice(0, 4);
     const total = last4.reduce(
-      (sum, s) => sum + toFloat(s["Stride length at 60 km/h"]) || 0,
+      (sum, s) => sum + (toFloat(s["Stride length at 60 km/h"]) || 0),
       0
     );
     return last4.length ? (total / last4.length).toFixed(2) : "N/A";
@@ -200,22 +198,10 @@ export default function HorsePage() {
   };
 
   const Row = ({ label, value, comment }) => (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 8,
-        padding: "6px 0",
-      }}
-    >
-      <div style={{ flex: 1, textAlign: "left" }}>{label}</div>
-      <div style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
-        {value}
-      </div>
-      <div style={{ flex: 1, textAlign: "left", fontStyle: "italic" }}>
-        {comment}
-      </div>
+    <div className="hp-row">
+      <div className="hp-row-label">{label}</div>
+      <div className="hp-row-value">{value}</div>
+      <div className="hp-row-comment">{comment}</div>
     </div>
   );
 
@@ -281,39 +267,20 @@ export default function HorsePage() {
     </header>
   );
 
-  // ---------- Page layout with padding under fixed header ----------
+  // ---------- Page layout (order: Title → Sectionals → Fitness → Stride → HR → Speed) ----------
   return (
     <div style={{ paddingTop: 64 }}>
       <Header />
 
-      {/* Page Body */}
-      <div
-        style={{
-          background: "#0c3050ff",
-          minHeight: "calc(100vh - 64px)",
-          padding: 20,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div
-          style={{
-            background: "#fff",
-            width: "100%",
-            maxWidth: 1050,
-            borderRadius: 16,
-            boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
-            padding: 24,
-          }}
-        >
-          <div style={{ width: "100%", maxWidth: 960, margin: "0 auto" }}>
+      <div style={{ background: "#0c3050ff", minHeight: "calc(100vh - 64px)", padding: 20 }}>
+        <div className="hp-container">
+          {/* Title + sessions dropdown centered */}
+          <div className="hp-card" style={{ marginBottom: 16, textAlign: "center" }}>
             <h1
               style={{
-                fontSize: "2.5rem",
+                fontSize: "2rem",
                 fontWeight: 900,
-                textAlign: "center",
-                margin: "20px 0 40px",
+                margin: "8px 0 12px",
                 textTransform: "uppercase",
                 color: "#0B1E3C",
               }}
@@ -322,28 +289,56 @@ export default function HorsePage() {
             </h1>
 
             {sessions.length > 1 && (
-              <div style={{ textAlign: "center", marginBottom: 30 }}>
-                <select
-                  value={selectedSessionIndex}
-                  onChange={(e) =>
-                    setSelectedSessionIndex(parseInt(e.target.value))
-                  }
-                  style={{
-                    fontSize: "1.1rem",
-                    padding: "10px 20px",
-                    borderRadius: 8,
-                  }}
-                >
-                  {sessions.map((session, index) => (
-                    <option key={index} value={index}>
-                      {session.Date} – {session["Training type"]} – {session["Track name"]} – {session["Track condition"]}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                className="hp-select"
+                value={selectedSessionIndex}
+                onChange={(e) => setSelectedSessionIndex(parseInt(e.target.value))}
+                style={{ margin: "0 auto" }}
+              >
+                {sessions.map((session, index) => (
+                  <option key={index} value={index}>
+                    {session.Date} – {session["Training type"]} – {session["Track name"]} – {session["Track condition"]}
+                  </option>
+                ))}
+              </select>
             )}
 
-            <h2 style={{ color: "#0B1E3C" }}>Fitness & Recovery</h2>
+            <div style={{ marginTop: 8, fontWeight: 600, color: "#0B1E3C" }}>
+              {sessions.length} session{sessions.length === 1 ? "" : "s"} found
+            </div>
+          </div>
+
+          {/*{/* Sectional Times — full-width card with non-bold values */}
+<h2 className="hp-section-title">Sectional Times</h2>
+<div className="hp-grid" style={{ marginBottom: 16 }}>
+  <div className="hp-card sectional-card">
+    <h3>Last 800m</h3>
+    <div className="stat-value">{parseTime(latest?.["Time last 800m"])}</div>
+  </div>
+  <div className="hp-card sectional-card">
+    <h3>Last 600m</h3>
+    <div className="stat-value">{parseTime(latest?.["Time last 600m"])}</div>
+  </div>
+  <div className="hp-card sectional-card">
+    <h3>Last 400m</h3>
+    <div className="stat-value">{parseTime(latest?.["Time last 400m"])}</div>
+  </div>
+  <div className="hp-card sectional-card">
+    <h3>Last 200m</h3>
+    <div className="stat-value">{parseTime(latest?.["Time last 200m"])}</div>
+  </div>
+  <div className="hp-card sectional-card">
+    <h3>Best 600m</h3>
+    <div className="stat-value">{parseTime(latest?.["Time best 600m"])}</div>
+  </div>
+  <div className="hp-card sectional-card">
+    <h3>Best 200m</h3>
+    <div className="stat-value">{parseTime(latest?.["Time best 200m"])}</div>
+  </div>
+</div>
+          {/* Fitness & Recovery — full-width card */}
+          <div className="hp-card" style={{ marginBottom: 16 }}>
+            <h3>Fitness & Recovery</h3>
             <Row
               label="Fast Recovery (Intensity of Effort)"
               value={`${parse(latest?.["Fast Recovery in % of max HR"])}%`}
@@ -357,26 +352,17 @@ export default function HorsePage() {
             <Row
               label="HR in % after 5 min"
               value={`${parse(latest?.["HR after 5 min in % of max HR"])}%`}
-              comment={getHRAlert(
-                latest?.["HR after 5 min in % of max HR"],
-                5
-              )}
+              comment={getHRAlert(latest?.["HR after 5 min in % of max HR"], 5)}
             />
             <Row
               label="HR in % after 10 min"
               value={`${parse(latest?.["HR after 10 min in % of max HR"])}%`}
-              comment={getHRAlert(
-                latest?.["HR after 10 min in % of max HR"],
-                10
-              )}
+              comment={getHRAlert(latest?.["HR after 10 min in % of max HR"], 10)}
             />
             <Row
               label="HR in % after 15 min (Overall Recovery)"
               value={`${parse(latest?.["HR after 15 min in % of max HR"])}%`}
-              comment={getHRAlert(
-                latest?.["HR after 15 min in % of max HR"],
-                15
-              )}
+              comment={getHRAlert(latest?.["HR after 15 min in % of max HR"], 15)}
             />
             <Row
               label="Time to 65% Max HR"
@@ -388,37 +374,41 @@ export default function HorsePage() {
               value={parseTime(latest?.["Time to 55 % of the max HR "])}
               comment={getTime55Quality()}
             />
+          </div>
 
-            <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>Stride Data</h2>
+          {/* Stride Data — full-width card */}
+          <div className="hp-card" style={{ marginBottom: 16 }}>
+            <h3>Stride Data</h3>
             <Row
               label="Stride Length at 60 km/h"
-              value={parse(latest?.["Stride length at 60 km/h"]) + " m"}
+              value={`${parse(latest?.["Stride length at 60 km/h"])} m`}
               comment={getStrideAlert()}
             />
             <Row
               label="Stride Frequency at 60 km/h"
-              value={parse(latest?.["Stride frequency at 60 km/h"]) + " st/s"}
+              value={`${parse(latest?.["Stride frequency at 60 km/h"])} st/s`}
               comment=""
             />
             <Row
-              label="Expected Stride Length at 60 km/h"
-              value={getExpectedStride() + " m"}
+              label="Expected Stride Length @60"
+              value={`${getExpectedStride()} m`}
               comment=""
             />
             <Row
               label="Max Stride Length"
-              value={parse(latest?.["Max stride length"]) + " m"}
+              value={`${parse(latest?.["Max stride length"])} m`}
               comment=""
             />
             <Row
               label="Max Stride Frequency"
-              value={parse(latest?.["Max Stride Frequency"]) + " st/s"}
+              value={`${parse(latest?.["Max Stride Frequency"])} st/s`}
               comment=""
             />
+          </div>
 
-            <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>
-              Heart Rate Analysis
-            </h2>
+          {/* Heart Rate Analysis — full-width card */}
+          <div className="hp-card" style={{ marginBottom: 16 }}>
+            <h3>Heart Rate Analysis</h3>
             <Row
               label="Max HR"
               value={`${parse(latest?.["Max Heart Rate reached during training"])} bpm`}
@@ -429,50 +419,18 @@ export default function HorsePage() {
                 key={`zone-${zone}`}
                 label={`Zone ${zone} Duration (${zoneRanges[zone]})`}
                 value={parseTime(latest?.[`Duration effort zone ${zone}`])}
-                comment={getZoneComment(
-                  zone,
-                  latest?.[`Duration effort zone ${zone}`]
-                )}
+                comment={getZoneComment(zone, latest?.[`Duration effort zone ${zone}`])}
               />
             ))}
+          </div>
 
-            <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>Speed Analysis</h2>
+          {/* Speed Analysis — full-width card */}
+          <div className="hp-card" style={{ marginBottom: 8 }}>
+            <h3>Speed Analysis</h3>
             <Row
               label="Top Speed"
-              value={parse(latest?.["Max Speed"]) + " km/h"}
+              value={`${parse(latest?.["Max Speed"])} km/h`}
               comment={getTopSpeedComment()}
-            />
-
-            <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>Sectional Times</h2>
-            <Row
-              label="Last 800m"
-              value={parseTime(latest?.["Time last 800m"])}
-              comment=""
-            />
-            <Row
-              label="Last 600m"
-              value={parseTime(latest?.["Time last 600m"])}
-              comment=""
-            />
-            <Row
-              label="Last 400m"
-              value={parseTime(latest?.["Time last 400m"])}
-              comment=""
-            />
-            <Row
-              label="Last 200m"
-              value={parseTime(latest?.["Time last 200m"])}
-              comment=""
-            />
-            <Row
-              label="Best 600m"
-              value={parseTime(latest?.["Time best 600m"])}
-              comment=""
-            />
-            <Row
-              label="Best 200m"
-              value={parseTime(latest?.["Time best 200m"])}
-              comment=""
             />
           </div>
         </div>
