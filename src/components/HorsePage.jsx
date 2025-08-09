@@ -1,7 +1,9 @@
 import React, { useState, useLayoutEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useData } from "../DataContext";
-import { FaHome } from "react-icons/fa";
+// Auth for logout
+import { auth } from "../firebase";
+import { signOut } from "firebase/auth";
 
 export default function HorsePage() {
   const { horseName } = useParams();
@@ -37,7 +39,8 @@ export default function HorsePage() {
     const parsed = parseFloat(val);
     return isNaN(parsed) ? null : parsed;
   };
-    const getExpectedStride = () => {
+
+  const getExpectedStride = () => {
     if (!latest) return "N/A";
     const surface = latest.Surface || latest["Track surface"];
     const past = sessions.filter(
@@ -80,13 +83,12 @@ export default function HorsePage() {
     if (percent === null) return null;
 
     if (minType === 5) {
-    if (percent <= 35) return "✅✅ Excellent early recovery – minimal residual fatigue";
-    if (percent <= 42) return "✅ Good early recovery – handled effort well";
-    if (percent <= 50) return "🎯 Acceptable recovery for high-intensity work";
-    if (percent <= 57) return "🔶 Elevated HR – effort still taxing, monitor recovery";
-    return "🔴 High intensity impact – slow recovery from effort";
-  }
-
+      if (percent <= 35) return "✅✅ Excellent early recovery – minimal residual fatigue";
+      if (percent <= 42) return "✅ Good early recovery – handled effort well";
+      if (percent <= 50) return "🎯 Acceptable recovery for high-intensity work";
+      if (percent <= 57) return "🔶 Elevated HR – effort still taxing, monitor recovery";
+      return "🔴 High intensity impact – slow recovery from effort";
+    }
 
     if (minType === 10) {
       if (percent <= 32) return "✅✅ Excellent 10 min recovery";
@@ -107,7 +109,8 @@ export default function HorsePage() {
 
     return null;
   };
-    const getTime55Quality = () => {
+
+  const getTime55Quality = () => {
     const val = toFloat(latest?.["Time to 55 % of the max HR "]);
     if (val === null) return null;
     if (val <= 0.5) return "✅✅ Excellent";
@@ -155,31 +158,27 @@ export default function HorsePage() {
     5: "90–100%",
   };
 
- const getZoneComment = (zone, duration) => {
-  const mins = toFloat(duration) / 60;
-  switch (zone) {
-    case 1:
-      return "✅ Recovery zone — aerobic energy use (oxygen-fed, fat burning)";
-    case 2:
-      return "✅ Aerobic base — low-intensity, long-duration (oxygen-fed)";
-    case 3:
-      return "🎯 Aerobic threshold — mix of aerobic & anaerobic energy";
-    case 4:
-      return "🔶 High-intensity threshold — mostly anaerobic (lactate starting to build)";
-    case 5:
-      if (mins <= 1)
-        return "✅✅ Short burst – anaerobic power, very low risk";
-      if (mins <= 2)
-        return "✅ Brief anaerobic sprint — expected in finishing work";
-      if (mins <= 4)
-        return "🎯 Sustained anaerobic — within normal range";
-      if (mins <= 6)
-        return "🔶 Prolonged anaerobic — monitor recovery";
-      return "🔴 Excessive anaerobic load — possible overload or pathology risk";
-    default:
-      return "";
-  }
-};
+  const getZoneComment = (zone, duration) => {
+    const mins = toFloat(duration) / 60;
+    switch (zone) {
+      case 1:
+        return "✅ Recovery zone — aerobic energy use (oxygen-fed, fat burning)";
+      case 2:
+        return "✅ Aerobic base — low-intensity, long-duration (oxygen-fed)";
+      case 3:
+        return "🎯 Aerobic threshold — mix of aerobic & anaerobic energy";
+      case 4:
+        return "🔶 High-intensity threshold — mostly anaerobic (lactate starting to build)";
+      case 5:
+        if (mins <= 1) return "✅✅ Short burst – anaerobic power, very low risk";
+        if (mins <= 2) return "✅ Brief anaerobic sprint — expected in finishing work";
+        if (mins <= 4) return "🎯 Sustained anaerobic — within normal range";
+        if (mins <= 6) return "🔶 Prolonged anaerobic — monitor recovery";
+        return "🔴 Excessive anaerobic load — possible overload or pathology risk";
+      default:
+        return "";
+    }
+  };
 
   const getTopSpeedComment = () => {
     const top = toFloat(latest?.["Max Speed"]);
@@ -199,7 +198,8 @@ export default function HorsePage() {
     if (diff < -1.5) return "🔴 Below usual top speed ";
     return "🔶 Slightly below average — monitor next session";
   };
-    const Row = ({ label, value, comment }) => (
+
+  const Row = ({ label, value, comment }) => (
     <div
       style={{
         display: "flex",
@@ -219,225 +219,262 @@ export default function HorsePage() {
     </div>
   );
 
-  return (
-    <div
+  // ---------- Fixed white header ----------
+  const Header = () => (
+    <header
       style={{
-        width: "100vw",
-        height: "100vh",
-        backgroundColor: "#0c3050ff",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 64,
         display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 20px",
+        background: "#ffffff",
+        color: "#0c3050ff",
+        zIndex: 1000,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
       }}
     >
       <div
-        style={{
-          backgroundColor: "#0B1E3C",
-          padding: "20px 0",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "20px",
-        }}
+        style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}
+        onClick={() => navigate("/")}
       >
-        <img
-          src="/athleteq-logo-white.png"
-          alt="AthletEQ"
-          style={{ height: 200 }}
-        />
-        <FaHome
-          onClick={() => navigate("/")}
-          style={{
-            cursor: "pointer",
-            fontSize: "2rem",
-            color: "#72B4F6",
-          }}
-        />
+        <img src="/athleteq-logo.png" alt="AthletEQ" style={{ height: 36 }} />
+        <span style={{ fontWeight: 700, letterSpacing: 0.2 }}>AthletEQ</span>
       </div>
 
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            background: "transparent",
+            color: "#0c3050ff",
+            border: "1px solid #0c3050ff",
+            padding: "8px 14px",
+            borderRadius: 6,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          ← Back
+        </button>
+        <button
+          onClick={() => signOut(auth)}
+          style={{
+            background: "#0c3050ff",
+            color: "#fff",
+            padding: "8px 14px",
+            border: "none",
+            borderRadius: 6,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0d3557")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0c3050ff")}
+        >
+          Log out
+        </button>
+      </div>
+    </header>
+  );
+
+  // ---------- Page layout with padding under fixed header ----------
+  return (
+    <div style={{ paddingTop: 64 }}>
+      <Header />
+
+      {/* Page Body */}
       <div
         style={{
-          flexGrow: 1,
-          overflowY: "auto",
-          padding: "40px",
-          boxSizing: "border-box",
-          width: "100%",
-          maxWidth: 1050,
-          backgroundColor: "#fff",
-          margin: "0 auto",
-          borderRadius: "16px",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
+          background: "#0c3050ff",
+          minHeight: "calc(100vh - 64px)",
+          padding: 20,
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <div style={{ width: "100%", maxWidth: 960 }}>
-          <h1
-            style={{
-              fontSize: "2.5rem",
-              fontWeight: 900,
-              textAlign: "center",
-              margin: "20px 0 40px",
-              textTransform: "uppercase",
-              color: "#0B1E3C",
-            }}
-          >
-            {(horseName || "").toUpperCase()}
-          </h1>
+        <div
+          style={{
+            background: "#fff",
+            width: "100%",
+            maxWidth: 1050,
+            borderRadius: 16,
+            boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
+            padding: 24,
+          }}
+        >
+          <div style={{ width: "100%", maxWidth: 960, margin: "0 auto" }}>
+            <h1
+              style={{
+                fontSize: "2.5rem",
+                fontWeight: 900,
+                textAlign: "center",
+                margin: "20px 0 40px",
+                textTransform: "uppercase",
+                color: "#0B1E3C",
+              }}
+            >
+              {(horseName || "").toUpperCase()}
+            </h1>
 
-          {sessions.length > 1 && (
-            <div style={{ textAlign: "center", marginBottom: 30 }}>
-              <select
-                value={selectedSessionIndex}
-                onChange={(e) =>
-                  setSelectedSessionIndex(parseInt(e.target.value))
-                }
-                style={{
-                  fontSize: "1.1rem",
-                  padding: "10px 20px",
-                  borderRadius: 8,
-                }}
-              >
-                {sessions.map((session, index) => (
-  <option key={index} value={index}>
-    {session.Date} – {session["Training type"]} – {session["Track name"]} – {session["Track condition"]}
-  </option>
-))}
-              </select>
-            </div>
-          )}
-                    <h2 style={{ color: "#0B1E3C" }}>Fitness & Recovery</h2>
-          <Row
-            label="Fast Recovery (Intensity of Effort)"
-            value={`${parse(latest?.["Fast Recovery in % of max HR"])}%`}
-            comment={getRecoveryAlert()}
-          />
-          <Row
-            label="Acidosis (Lactate recovery delay)"
-            value={parseTime(latest?.["Acidose"])}
-            comment={getAcidosisComment()}
-          />
-          <Row
-            label="HR in % after 5 min"
-            value={`${parse(latest?.["HR after 5 min in % of max HR"])}%`}
-            comment={getHRAlert(
-              latest?.["HR after 5 min in % of max HR"],
-              5
+            {sessions.length > 1 && (
+              <div style={{ textAlign: "center", marginBottom: 30 }}>
+                <select
+                  value={selectedSessionIndex}
+                  onChange={(e) =>
+                    setSelectedSessionIndex(parseInt(e.target.value))
+                  }
+                  style={{
+                    fontSize: "1.1rem",
+                    padding: "10px 20px",
+                    borderRadius: 8,
+                  }}
+                >
+                  {sessions.map((session, index) => (
+                    <option key={index} value={index}>
+                      {session.Date} – {session["Training type"]} – {session["Track name"]} – {session["Track condition"]}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
-          />
-          <Row
-            label="HR in % after 10 min"
-            value={`${parse(latest?.["HR after 10 min in % of max HR"])}%`}
-            comment={getHRAlert(
-              latest?.["HR after 10 min in % of max HR"],
-              10
-            )}
-          />
-          <Row
-            label="HR in % after 15 min (Overall Recovery)"
-            value={`${parse(latest?.["HR after 15 min in % of max HR"])}%`}
-            comment={getHRAlert(
-              latest?.["HR after 15 min in % of max HR"],
-              15
-            )}
-          />
-          <Row
-            label="Time to 65% Max HR"
-            value={parseTime(latest?.["Time to 65 % of the max HR "])}
-            comment={getTime65Quality()}
-          />
-          <Row
-            label="Time to 55% Max HR"
-            value={parseTime(latest?.["Time to 55 % of the max HR "])}
-            comment={getTime55Quality()}
-          />
 
-          <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>Stride Data</h2>
-          <Row
-            label="Stride Length at 60 km/h"
-            value={parse(latest?.["Stride length at 60 km/h"]) + " m"}
-            comment={getStrideAlert()}
-          />
-          <Row
-            label="Stride Frequency at 60 km/h"
-            value={parse(latest?.["Stride frequency at 60 km/h"]) + " st/s"}
-            comment=""
-          />
-          <Row
-            label="Expected Stride Length at 60 km/h"
-            value={getExpectedStride() + " m"}
-            comment=""
-          />
-          <Row
-            label="Max Stride Length"
-            value={parse(latest?.["Max stride length"]) + " m"}
-            comment=""
-          />
-          <Row
-            label="Max Stride Frequency"
-            value={parse(latest?.["Max Stride Frequency"]) + " st/s"}
-            comment=""
-          />
-
-          <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>
-            Heart Rate Analysis
-          </h2>
-          <Row
-            label="Max HR"
-            value={`${parse(latest?.["Max Heart Rate reached during training"])} bpm`}
-            comment={getMaxHRAlert()}
-          />
-          {[1, 2, 3, 4, 5].map((zone) => (
+            <h2 style={{ color: "#0B1E3C" }}>Fitness & Recovery</h2>
             <Row
-              key={`zone-${zone}`}
-              label={`Zone ${zone} Duration (${zoneRanges[zone]})`}
-              value={parseTime(latest?.[`Duration effort zone ${zone}`])}
-              comment={getZoneComment(
-                zone,
-                latest?.[`Duration effort zone ${zone}`]
+              label="Fast Recovery (Intensity of Effort)"
+              value={`${parse(latest?.["Fast Recovery in % of max HR"])}%`}
+              comment={getRecoveryAlert()}
+            />
+            <Row
+              label="Acidosis (Lactate recovery delay)"
+              value={parseTime(latest?.["Acidose"])}
+              comment={getAcidosisComment()}
+            />
+            <Row
+              label="HR in % after 5 min"
+              value={`${parse(latest?.["HR after 5 min in % of max HR"])}%`}
+              comment={getHRAlert(
+                latest?.["HR after 5 min in % of max HR"],
+                5
               )}
             />
-          ))}
+            <Row
+              label="HR in % after 10 min"
+              value={`${parse(latest?.["HR after 10 min in % of max HR"])}%`}
+              comment={getHRAlert(
+                latest?.["HR after 10 min in % of max HR"],
+                10
+              )}
+            />
+            <Row
+              label="HR in % after 15 min (Overall Recovery)"
+              value={`${parse(latest?.["HR after 15 min in % of max HR"])}%`}
+              comment={getHRAlert(
+                latest?.["HR after 15 min in % of max HR"],
+                15
+              )}
+            />
+            <Row
+              label="Time to 65% Max HR"
+              value={parseTime(latest?.["Time to 65 % of the max HR "])}
+              comment={getTime65Quality()}
+            />
+            <Row
+              label="Time to 55% Max HR"
+              value={parseTime(latest?.["Time to 55 % of the max HR "])}
+              comment={getTime55Quality()}
+            />
 
-          <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>Speed Analysis</h2>
-          <Row
-            label="Top Speed"
-            value={parse(latest?.["Max Speed"]) + " km/h"}
-            comment={getTopSpeedComment()}
-          />
+            <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>Stride Data</h2>
+            <Row
+              label="Stride Length at 60 km/h"
+              value={parse(latest?.["Stride length at 60 km/h"]) + " m"}
+              comment={getStrideAlert()}
+            />
+            <Row
+              label="Stride Frequency at 60 km/h"
+              value={parse(latest?.["Stride frequency at 60 km/h"]) + " st/s"}
+              comment=""
+            />
+            <Row
+              label="Expected Stride Length at 60 km/h"
+              value={getExpectedStride() + " m"}
+              comment=""
+            />
+            <Row
+              label="Max Stride Length"
+              value={parse(latest?.["Max stride length"]) + " m"}
+              comment=""
+            />
+            <Row
+              label="Max Stride Frequency"
+              value={parse(latest?.["Max Stride Frequency"]) + " st/s"}
+              comment=""
+            />
 
-          <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>Sectional Times</h2>
-          <Row
-            label="Last 800m"
-            value={parseTime(latest?.["Time last 800m"])}
-            comment=""
-          />
-          <Row
-            label="Last 600m"
-            value={parseTime(latest?.["Time last 600m"])}
-            comment=""
-          />
-          <Row
-            label="Last 400m"
-            value={parseTime(latest?.["Time last 400m"])}
-            comment=""
-          />
-          <Row
-            label="Last 200m"
-            value={parseTime(latest?.["Time last 200m"])}
-            comment=""
-          />
-          <Row
-            label="Best 600m"
-            value={parseTime(latest?.["Time best 600m"])}
-            comment=""
-          />
-          <Row
-            label="Best 200m"
-            value={parseTime(latest?.["Time best 200m"])}
-            comment=""
-          />
+            <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>
+              Heart Rate Analysis
+            </h2>
+            <Row
+              label="Max HR"
+              value={`${parse(latest?.["Max Heart Rate reached during training"])} bpm`}
+              comment={getMaxHRAlert()}
+            />
+            {[1, 2, 3, 4, 5].map((zone) => (
+              <Row
+                key={`zone-${zone}`}
+                label={`Zone ${zone} Duration (${zoneRanges[zone]})`}
+                value={parseTime(latest?.[`Duration effort zone ${zone}`])}
+                comment={getZoneComment(
+                  zone,
+                  latest?.[`Duration effort zone ${zone}`]
+                )}
+              />
+            ))}
+
+            <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>Speed Analysis</h2>
+            <Row
+              label="Top Speed"
+              value={parse(latest?.["Max Speed"]) + " km/h"}
+              comment={getTopSpeedComment()}
+            />
+
+            <h2 style={{ color: "#0B1E3C", marginTop: 30 }}>Sectional Times</h2>
+            <Row
+              label="Last 800m"
+              value={parseTime(latest?.["Time last 800m"])}
+              comment=""
+            />
+            <Row
+              label="Last 600m"
+              value={parseTime(latest?.["Time last 600m"])}
+              comment=""
+            />
+            <Row
+              label="Last 400m"
+              value={parseTime(latest?.["Time last 400m"])}
+              comment=""
+            />
+            <Row
+              label="Last 200m"
+              value={parseTime(latest?.["Time last 200m"])}
+              comment=""
+            />
+            <Row
+              label="Best 600m"
+              value={parseTime(latest?.["Time best 600m"])}
+              comment=""
+            />
+            <Row
+              label="Best 200m"
+              value={parseTime(latest?.["Time best 200m"])}
+              comment=""
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { auth } from "./firebase";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 
-// Optional: restrict to specific emails you added in Firebase
 const ALLOWED = [
   // "you@example.com",
 ];
@@ -32,39 +31,47 @@ export default function AuthGate({ children }) {
     try {
       await signInWithEmailAndPassword(auth, form.email, form.password);
     } catch {
-      setError("Login failed");
+      setError("Login failed. Check your email and password.");
     }
   };
 
-  if (checking) return null;
+  if (checking) {
+    return (
+      <div className="selector-page">
+        <div className="selector-card" style={{ color: "#333" }}>Loading…</div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
-      <div style={{ display: "grid", placeItems: "center", minHeight: "100vh", background: "#0c2e4e" }}>
-        <form onSubmit={handleLogin} style={{ width: 320, padding: 24, borderRadius: 8, background: "white" }}>
-          <h3>Sign in</h3>
-          <div style={{ margin: "12px 0" }}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              style={{ width: "100%", padding: 8 }}
-              required
-            />
-          </div>
-          <div style={{ margin: "12px 0" }}>
-            <input
-              type="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              style={{ width: "100%", padding: 8 }}
-              required
-            />
-          </div>
-          {error && <div style={{ color: "red", marginBottom: 8 }}>{error}</div>}
-          <button type="submit" style={{ width: "100%", padding: 10 }}>Sign in</button>
+      <div className="selector-page">
+        <form className="selector-card" onSubmit={handleLogin}>
+          <img src="/athleteq-logo.png" alt="AthletEQ Logo" style={{ width: 280 }} />
+          <h3 style={{ margin: 0, color: "#222" }}>Sign in</h3>
+
+          <input
+            className="login-input"
+            type="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            required
+          />
+          <input
+            className="login-input"
+            type="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            required
+          />
+
+          {error && <div style={{ color: "red", maxWidth: 360 }}>{error}</div>}
+
+          <button className="login-button" type="submit">
+            Sign in
+          </button>
         </form>
       </div>
     );

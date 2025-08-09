@@ -5,6 +5,10 @@ import { useData } from "./DataContext";
 import SplashScreen from "./SplashScreen.jsx";
 import HorseSelector from "./components/HorseSelector.jsx";
 
+// ⬇️ Auth imports
+import { auth } from "./firebase";
+import { signOut } from "firebase/auth";
+
 export default function App() {
   const { data, setData } = useData();
   const navigate = useNavigate();
@@ -55,78 +59,128 @@ export default function App() {
 
   const recentHorses = getRecentHorseNames(data);
 
-  if (data.length === 0) {
-    return <SplashScreen onFileUpload={handleFileUpload} />;
-  }
-
-  return (
-    <div
+  // ----- Fixed header (white) -----
+  const Header = () => (
+    <header
       style={{
-        backgroundColor: "#0c3050ff",
-        height: "100vh",
-        width: "100vw",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 64,
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "Arial, sans-serif",
-        padding: 20,
+        justifyContent: "space-between",
+        padding: "0 20px",
+        background: "#ffffff",
+        color: "#0c3050ff",
+        zIndex: 1000,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
       }}
     >
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <img src="/athleteq-logo.png" alt="AthletEQ" style={{ height: 36 }} />
+        <span style={{ fontWeight: 700, letterSpacing: 0.2 }}>AthletEQ</span>
+      </div>
+
+      <button
+        onClick={() => signOut(auth)}
+        style={{
+          background: "#0c3050ff",
+          color: "#fff",
+          padding: "8px 14px",
+          border: "none",
+          borderRadius: 6,
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0d3557")}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#0c3050ff")}
+      >
+        Log out
+      </button>
+    </header>
+  );
+
+  // ----- Main content -----
+  const content =
+    data.length === 0 ? (
+      <SplashScreen onFileUpload={handleFileUpload} />
+    ) : (
       <div
         style={{
-          backgroundColor: "#fff",
-          padding: "40px",
-          borderRadius: "16px",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
-          width: "100%",
-          maxWidth: 480,
+          backgroundColor: "#0c3050ff",
+          minHeight: "100vh",
+          width: "100vw",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "Arial, sans-serif",
+          padding: 20,
         }}
       >
-        <img
-          src="/athleteq-logo.png"
-          alt="AthletEQ Logo"
-          style={{ width: 280, marginBottom: 20 }}
-        />
-
-        <HorseSelector
-          horses={recentHorses}
-          onSelectHorse={(horse) => {
-            navigate(`/horse/${encodeURIComponent(horse)}`);
-          }}
-        />
-
-        <button
-          onClick={clearData}
+        <div
           style={{
-            backgroundColor: "#11436e",
-            color: "#fff",
-            padding: "12px 24px",
-            fontSize: "1rem",
-            borderRadius: "8px",
-            border: "none",
-            cursor: "pointer",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
+            backgroundColor: "#fff",
+            padding: "40px",
+            borderRadius: "16px",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
             width: "100%",
-            maxWidth: 360,
-            marginTop: 20,
+            maxWidth: 480,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.backgroundColor = "#0d3557")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.backgroundColor = "#11436e")
-          }
         >
-          🗑️ Clear Data
-        </button>
+          <img
+            src="/athleteq-logo.png"
+            alt="AthletEQ Logo"
+            style={{ width: 280, marginBottom: 20 }}
+          />
+
+          <HorseSelector
+            horses={recentHorses}
+            onSelectHorse={(horse) => {
+              navigate(`/horse/${encodeURIComponent(horse)}`);
+            }}
+          />
+
+          <button
+            onClick={clearData}
+            style={{
+              backgroundColor: "#11436e",
+              color: "#fff",
+              padding: "12px 24px",
+              fontSize: "1rem",
+              borderRadius: "8px",
+              border: "none",
+              cursor: "pointer",
+              fontWeight: "bold",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              width: "100%",
+              maxWidth: 360,
+              marginTop: 20,
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "#0d3557")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "#11436e")
+            }
+          >
+            🗑️ Clear Data
+          </button>
+        </div>
       </div>
+    );
+
+  return (
+    <div style={{ paddingTop: 64 }}>
+      <Header />
+      {content}
     </div>
   );
 }

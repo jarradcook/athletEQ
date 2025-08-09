@@ -3,16 +3,13 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Links */
 a {
   font-weight: 500;
   color: #646cff;
@@ -22,19 +19,28 @@ a:hover {
   color: #535bf2;
 }
 
-body {
+/* Base body style */
+html, body, #root {
+  height: 100%;
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
 }
 
+/* Default body (overridden by AuthGate splash styles) */
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Headings */
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
 }
 
+/* Buttons (overridden inside AuthGate) */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -54,6 +60,7 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Light mode defaults */
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -66,28 +73,47 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Splash screen / login page wrapper */
 .selector-page {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #0B1E3C;
+  background-color: #0c3050ff; /* AthletEQ navy */
   padding: 40px 20px;
 }
 
+/* White card styles */
 .selector-card {
   background: #fff;
   padding: 30px 40px;
-  border-radius: 12px;
+  border-radius: 16px;
   text-align: center;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
   max-width: 480px;
   width: 100%;
-}html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
+.login-input {
+  width: 100%;
+  max-width: 360px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+}
+
+.login-button {
+  background-color: #11436e;
+  color: #fff;
+  padding: 12px 24px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
+  max-width: 360px;
+  transition: background 0.2s;
+}
+.login-button:hover { background-color: #0d3557; }
