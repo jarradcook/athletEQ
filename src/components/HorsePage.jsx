@@ -20,14 +20,28 @@ export default function HorsePage() {
     window.scrollTo(0, 0);
   }, [selectedSessionIndex, horseName]);
 
+  // ---------- Helpers ----------
   const parse = (value) =>
     value === undefined || value === null || value === "" ? "N/A" : value;
 
+  // sectionals with tenths: m:ss.t
+  const formatSectional = (value) => {
+    if (value == null || value === "N/A" || value === "") return "N/A";
+    if (typeof value === "string" && value.includes(":")) return value;
+    const s = parseFloat(value);
+    if (isNaN(s)) return "N/A";
+    const mins = Math.floor(s / 60);
+    const secs = s - mins * 60;
+    const secsStr = secs.toFixed(1).padStart(4, "0"); // "34.2"
+    return `${mins}:${secsStr}`;
+  };
+
+  // generic m:ss (no tenths)
   const parseTime = (value) => {
-    if (!value || value === "N/A") return "0:00";
+    if (value == null || value === "N/A" || value === "") return "N/A";
     if (typeof value === "string" && value.includes(":")) return value;
     const seconds = parseFloat(value);
-    if (isNaN(seconds)) return "N/A";
+    if (!Number.isFinite(seconds)) return "N/A";
     const mins = Math.floor(seconds / 60);
     const secs = Math.round(seconds % 60).toString().padStart(2, "0");
     return `${mins}:${secs}`;
@@ -36,6 +50,12 @@ export default function HorsePage() {
   const toFloat = (val) => {
     const parsed = parseFloat(val);
     return isNaN(parsed) ? null : parsed;
+  };
+
+  const fmtMeters = (m) => {
+    if (m == null || isNaN(m)) return "N/A";
+    const value = Math.round(m);
+    return value.toLocaleString() + " m";
   };
 
   const getExpectedStride = () => {
@@ -66,7 +86,9 @@ export default function HorsePage() {
   };
 
   const getRecoveryAlert = () => {
-    const fast = toFloat(latest?.["Fast Recovery in % of max HR"]);
+    const fast =
+      toFloat(latest?.["Fast Recovery % MaxHR"]) ??
+      toFloat(latest?.["Fast Recovery in % of max HR"]);
     if (fast === null) return null;
     if (fast <= 38) return "✅✅ Low intensity of effort required";
     if (fast <= 45) return "✅ Handled intensity of effort well";
@@ -109,21 +131,30 @@ export default function HorsePage() {
   };
 
   const getTime55Quality = () => {
-    const val = toFloat(latest?.["Time to 55 % of the max HR "]);
+    const val = toFloat(latest?.["Time to 55 % of the max HR"]);
     if (val === null) return null;
     if (val <= 0.5) return "✅✅ Excellent";
     if (val <= 1) return "✅ Good";
     if (val <= 2) return "🎯 Fair";
-    return "🔴 Poor";
+    return "🔴 Slow – check context (intensity, temperament, device off early?)";
   };
 
   const getTime65Quality = () => {
-    const val = toFloat(latest?.["Time to 65 % of the max HR "]);
+    const val = toFloat(latest?.["Time to 65 % of the max HR"]);
     if (val === null) return null;
     if (val <= 0.5) return "✅✅ Excellent";
     if (val <= 1) return "✅ Good";
     if (val <= 2) return "🎯 Fair";
-    return "🔴 Poor";
+    return "🔴 Slow – check context (intensity, temperament, device off early?)";
+  };
+
+  const getAcidoseComment = () => {
+    const val = toFloat(latest?.["Acidose"]);
+    if (val == null) return null;
+    if (val <= 60) return "✅✅ Excellent lactate clearance";
+    if (val <= 120) return "✅ Good clearance";
+    if (val <= 180) return "🎯 Fair — keep monitoring";
+    return "🔶 Slow — consider easing next session or check context";
   };
 
   const getMaxHRAlert = () => {
@@ -131,7 +162,7 @@ export default function HorsePage() {
     const pastHRs = sessions
       .map((s) => toFloat(s["Max Heart Rate reached during training"]))
       .filter((v) => v !== null);
-    if (!maxHR || pastHRs.length < 2) return null;
+    if (!Number.isFinite(maxHR) || pastHRs.length < 2) return null;
     const avg = pastHRs.reduce((a, b) => a + b, 0) / pastHRs.length;
     if (Math.abs(maxHR - avg) <= 5) {
       return "✅ Consistent with usual performance";
@@ -139,14 +170,32 @@ export default function HorsePage() {
     return "⚠️ Check HR graph. HR not within expected range";
   };
 
-  const getAcidosisComment = () => {
-    const acidose = toFloat(latest?.["Acidose"]);
-    if (acidose === null) return null;
-    if (acidose <= 10) return "✅✅ Immediate HR drop – excellent lactate clearance";
-    if (acidose <= 20) return "✅ Good – normal cardiovascular response post-effort";
-    if (acidose <= 30) return "🔶 Delayed drop – monitor fatigue or lactate load";
-    return "🔴 Prolonged delay – possible overload or metabolic stress";
+  const getTopSpeedComment = () => {
+    const top = toFloat(latest?.["Max Speed"]);
+    const pastSpeeds = sessions
+      .map((s) => toFloat(s["Max Speed"]))
+      .filter((v) => v !== null);
+
+    if (!Number.isFinite(top) || pastSpeeds.length < 2) return null;
+
+    const sum = pastSpeeds.reduce((a, b) => a + b, 0);
+    const avg = sum / pastSpeeds.length;
+    const diff = top - avg;
+
+    if (diff > 1.5) return "✅ New top-end effort — strong finishing speed";
+    if (diff > 0.5) return "🎯 Good speed shown — slightly above average";
+    if (Math.abs(diff) <= 0.5) return `✅ Within expected range (±1.0 km/h)`;
+    if (diff < -1.5) return "🔶 Below usual top speed — context check";
+    return "🔶 Slightly below average — monitor next session";
   };
+
+  const Row = ({ label, value, comment }) => (
+    <div className="hp-row">
+      <div className="hp-row-label">{label}</div>
+      <div className="hp-row-value">{value}</div>
+      <div className="hp-row-comment">{comment}</div>
+    </div>
+  );
 
   const zoneRanges = {
     1: "50–60%",
@@ -160,50 +209,23 @@ export default function HorsePage() {
     const mins = toFloat(duration) / 60;
     switch (zone) {
       case 1:
-        return "✅ Recovery zone — aerobic energy use (oxygen-fed, fat burning)";
+        return "✅ Recovery zone — aerobic energy use (oxygen‑fed)";
       case 2:
-        return "✅ Aerobic base — low-intensity, long-duration (oxygen-fed)";
+        return "✅ Aerobic base — low‑intensity, long‑duration";
       case 3:
-        return "🎯 Aerobic threshold — mix of aerobic & anaerobic energy";
+        return "🎯 Aerobic threshold — mix of aerobic & anaerobic";
       case 4:
-        return "🔶 High-intensity threshold — mostly anaerobic (lactate starting to build)";
+        return "🔶 High‑intensity threshold — lactate rising";
       case 5:
-        if (mins <= 1) return "✅✅ Short burst – anaerobic power, very low risk";
-        if (mins <= 2) return "✅ Brief anaerobic sprint — expected in finishing work";
-        if (mins <= 4) return "🎯 Sustained anaerobic — within normal range";
+        if (mins <= 1) return "✅✅ Short burst — very low risk";
+        if (mins <= 2) return "✅ Brief anaerobic sprint — expected in finish";
+        if (mins <= 4) return "🎯 Sustained anaerobic — normal range";
         if (mins <= 6) return "🔶 Prolonged anaerobic — monitor recovery";
-        return "🔴 Excessive anaerobic load — possible overload or pathology risk";
+        return "🔴 Excessive anaerobic — overload risk";
       default:
         return "";
     }
   };
-
-  const getTopSpeedComment = () => {
-    const top = toFloat(latest?.["Max Speed"]);
-    const pastSpeeds = sessions
-      .map((s) => toFloat(s["Max Speed"]))
-      .filter((v) => v !== null);
-
-    if (!top || pastSpeeds.length < 2) return null;
-
-    const sum = pastSpeeds.reduce((a, b) => a + b, 0);
-    const avg = sum / pastSpeeds.length;
-    const diff = top - avg;
-
-    if (diff > 1.5) return "✅ New top-end effort — strong finishing speed";
-    if (diff > 0.5) return "🎯 Good speed shown — slightly above average";
-    if (Math.abs(diff) <= 0.5) return `✅ Within expected range (±1.0 km/h)`;
-    if (diff < -1.5) return "🔴 Below usual top speed ";
-    return "🔶 Slightly below average — monitor next session";
-  };
-
-  const Row = ({ label, value, comment }) => (
-    <div className="hp-row">
-      <div className="hp-row-label">{label}</div>
-      <div className="hp-row-value">{value}</div>
-      <div className="hp-row-comment">{comment}</div>
-    </div>
-  );
 
   // ---------- Fixed white header ----------
   const Header = () => (
@@ -267,14 +289,25 @@ export default function HorsePage() {
     </header>
   );
 
-  // ---------- Page layout (order: Title → Sectionals → Fitness → Stride → HR → Speed) ----------
+  if (!latest) {
+    return (
+      <div style={{ paddingTop: 64 }}>
+        <Header />
+        <div style={{ padding: 24, color: "#fff", background: "#0c3050ff" }}>
+          No sessions found for {horseName}.
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- Page layout ----------
   return (
     <div style={{ paddingTop: 64 }}>
       <Header />
 
       <div style={{ background: "#0c3050ff", minHeight: "calc(100vh - 64px)", padding: 20 }}>
         <div className="hp-container">
-          {/* Title + sessions dropdown centered */}
+          {/* Title + sessions dropdown */}
           <div className="hp-card" style={{ marginBottom: 16, textAlign: "center" }}>
             <h1
               style={{
@@ -308,75 +341,113 @@ export default function HorsePage() {
             </div>
           </div>
 
-          {/*{/* Sectional Times — full-width card with non-bold values */}
-<h2 className="hp-section-title">Sectional Times</h2>
-<div className="hp-grid" style={{ marginBottom: 16 }}>
-  <div className="hp-card sectional-card">
-    <h3>Last 800m</h3>
-    <div className="stat-value">{parseTime(latest?.["Time last 800m"])}</div>
-  </div>
-  <div className="hp-card sectional-card">
-    <h3>Last 600m</h3>
-    <div className="stat-value">{parseTime(latest?.["Time last 600m"])}</div>
-  </div>
-  <div className="hp-card sectional-card">
-    <h3>Last 400m</h3>
-    <div className="stat-value">{parseTime(latest?.["Time last 400m"])}</div>
-  </div>
-  <div className="hp-card sectional-card">
-    <h3>Last 200m</h3>
-    <div className="stat-value">{parseTime(latest?.["Time last 200m"])}</div>
-  </div>
-  <div className="hp-card sectional-card">
-    <h3>Best 600m</h3>
-    <div className="stat-value">{parseTime(latest?.["Time best 600m"])}</div>
-  </div>
-  <div className="hp-card sectional-card">
-    <h3>Best 200m</h3>
-    <div className="stat-value">{parseTime(latest?.["Time best 200m"])}</div>
-  </div>
-</div>
-          {/* Fitness & Recovery — full-width card */}
+          {/* Overall Performance Rating */}
+          <div
+            className="hp-card"
+            style={{
+              marginBottom: 16,
+              borderLeft: `8px solid ${latest?.Color || "#888"}`,
+            }}
+          >
+            <h3>Overall Performance Rating</h3>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div
+                style={{
+                  minWidth: 96,
+                  textAlign: "center",
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  background: "#f5f7fb",
+                  border: "1px solid #e5e8f0",
+                }}
+              >
+                <div style={{ fontSize: 24, fontWeight: 800, color: "#0B1E3C" }}>
+                  {latest?.Score10 != null ? `${latest.Score10}` : "N/A"}
+                </div>
+                <div style={{ fontSize: 12, color: "#334" }}>/10</div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, color: "#0B1E3C", marginBottom: 4 }}>
+                  {latest?.Phase || "Insufficient data"}
+                </div>
+                <div style={{ color: "#334" }}>
+                  {latest?.Reason ||
+                    "Need more sessions for this horse to rate fairly — metrics shown for reference."}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sectional Times — tenths */}
+          <h2 className="hp-section-title">Sectional Times</h2>
+          <div className="hp-grid" style={{ marginBottom: 16 }}>
+            <div className="hp-card sectional-card">
+              <h3>Last 800m</h3>
+              <div className="stat-value">{formatSectional(latest?.["Time last 800m"])}</div>
+            </div>
+            <div className="hp-card sectional-card">
+              <h3>Last 600m</h3>
+              <div className="stat-value">{formatSectional(latest?.["Time last 600m"])}</div>
+            </div>
+            <div className="hp-card sectional-card">
+              <h3>Last 400m</h3>
+              <div className="stat-value">{formatSectional(latest?.["Time last 400m"])}</div>
+            </div>
+            <div className="hp-card sectional-card">
+              <h3>Last 200m</h3>
+              <div className="stat-value">{formatSectional(latest?.["Time last 200m"])}</div>
+            </div>
+            <div className="hp-card sectional-card">
+              <h3>Best 600m</h3>
+              <div className="stat-value">{formatSectional(latest?.["Time best 600m"])}</div>
+            </div>
+            <div className="hp-card sectional-card">
+              <h3>Best 200m</h3>
+              <div className="stat-value">{formatSectional(latest?.["Time best 200m"])}</div>
+            </div>
+          </div>
+
+          {/* Fitness & Recovery */}
           <div className="hp-card" style={{ marginBottom: 16 }}>
             <h3>Fitness & Recovery</h3>
             <Row
               label="Fast Recovery (Intensity of Effort)"
-              value={`${parse(latest?.["Fast Recovery in % of max HR"])}%`}
+              value={`${parse(latest?.["Fast Recovery % MaxHR"] ?? latest?.["Fast Recovery in % of max HR"])}%`}
               comment={getRecoveryAlert()}
             />
             <Row
               label="Acidosis (Lactate recovery delay)"
               value={parseTime(latest?.["Acidose"])}
-              comment={getAcidosisComment()}
+              comment={getAcidoseComment()}
             />
             <Row
               label="HR in % after 5 min"
-              value={`${parse(latest?.["HR after 5 min in % of max HR"])}%`}
-              comment={getHRAlert(latest?.["HR after 5 min in % of max HR"], 5)}
+              value={`${parse(latest?.["HR5_pct"] ?? latest?.["HR after 5 min in % of max HR"])}%`}
+              comment={getHRAlert(latest?.["HR5_pct"] ?? latest?.["HR after 5 min in % of max HR"], 5)}
             />
             <Row
               label="HR in % after 10 min"
-              value={`${parse(latest?.["HR after 10 min in % of max HR"])}%`}
-              comment={getHRAlert(latest?.["HR after 10 min in % of max HR"], 10)}
+              value={`${parse(latest?.["HR10_pct"] ?? latest?.["HR after 10 min in % of max HR"])}%`}
+              comment={getHRAlert(latest?.["HR10_pct"] ?? latest?.["HR after 10 min in % of max HR"], 10)}
             />
             <Row
               label="HR in % after 15 min (Overall Recovery)"
-              value={`${parse(latest?.["HR after 15 min in % of max HR"])}%`}
-              comment={getHRAlert(latest?.["HR after 15 min in % of max HR"], 15)}
+              value={`${parse(latest?.["HR15_pct"] ?? latest?.["HR after 15 min in % of max HR"])}%`}
+              comment={getHRAlert(latest?.["HR15_pct"] ?? latest?.["HR after 15 min in % of max HR"], 15)}
             />
             <Row
               label="Time to 65% Max HR"
-              value={parseTime(latest?.["Time to 65 % of the max HR "])}
+              value={parseTime(latest?.["Time to 65 % of the max HR"])}
               comment={getTime65Quality()}
             />
             <Row
               label="Time to 55% Max HR"
-              value={parseTime(latest?.["Time to 55 % of the max HR "])}
+              value={parseTime(latest?.["Time to 55 % of the max HR"])}
               comment={getTime55Quality()}
             />
           </div>
 
-          {/* Stride Data — full-width card */}
+          {/* Stride Data */}
           <div className="hp-card" style={{ marginBottom: 16 }}>
             <h3>Stride Data</h3>
             <Row
@@ -406,7 +477,7 @@ export default function HorsePage() {
             />
           </div>
 
-          {/* Heart Rate Analysis — full-width card */}
+          {/* Heart Rate Analysis */}
           <div className="hp-card" style={{ marginBottom: 16 }}>
             <h3>Heart Rate Analysis</h3>
             <Row
@@ -424,14 +495,42 @@ export default function HorsePage() {
             ))}
           </div>
 
-          {/* Speed Analysis — full-width card */}
+          {/* Performance Metrics */}
           <div className="hp-card" style={{ marginBottom: 8 }}>
-            <h3>Speed Analysis</h3>
+            <h3>Performance Metrics</h3>
+
+            {/* Max Speed (value + comment) */}
             <Row
-              label="Top Speed"
+              label="Max Speed"
               value={`${parse(latest?.["Max Speed"])} km/h`}
               comment={getTopSpeedComment()}
             />
+
+            {/* Distances from Excel */}
+            <Row
+              label="Gallop distance"
+              value={fmtMeters(latest?.["Gallop distance"])}
+              comment=""
+            />
+            <Row
+              label="Distance of the main work up to the finish line"
+              value={fmtMeters(latest?.["Distance of the main work up to the finish line"])}
+              comment=""
+            />
+
+            {/* Distances per HR zone (from Excel) */}
+            <div className="hp-grid" style={{ marginTop: 8 }}>
+              {[1, 2, 3, 4, 5].map((z) => {
+                const dz = latest?.[`Distance effort zone ${z}`];
+                const val = dz == null ? "N/A" : fmtMeters(dz);
+                return (
+                  <div key={`dz-${z}`} className="hp-card sectional-card">
+                    <h3>{`Zone ${z} Distance`}</h3>
+                    <div className="stat-value">{val}</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
