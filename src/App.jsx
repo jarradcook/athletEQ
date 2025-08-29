@@ -11,6 +11,8 @@ import { auth } from "./firebase";
 import { signOut } from "firebase/auth";
 
 function Header() {
+  const { claims } = useData();  // 👈 get claims
+
   return (
     <header
       style={{
@@ -34,20 +36,23 @@ function Header() {
         <span style={{ fontWeight: 700, letterSpacing: 0.2 }}>AthletEQ</span>
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <Link
-          to="/admin/upload"
-          style={{
-            textDecoration: "none",
-            background: "transparent",
-            color: "#0c3050ff",
-            border: "1px solid #0c3050ff",
-            padding: "8px 14px",
-            borderRadius: 6,
-            fontWeight: 600,
-          }}
-        >
-          Admin Upload
-        </Link>
+        {/* 👇 Only show if user is admin */}
+        {claims?.admin === true && (
+          <Link
+            to="/admin/upload"
+            style={{
+              textDecoration: "none",
+              background: "transparent",
+              color: "#0c3050ff",
+              border: "1px solid #0c3050ff",
+              padding: "8px 14px",
+              borderRadius: 6,
+              fontWeight: 600,
+            }}
+          >
+            Admin Upload
+          </Link>
+        )}
         <button
           onClick={() => signOut(auth)}
           style={{
@@ -70,11 +75,9 @@ function Header() {
 }
 
 function Home() {
-  const { data, ready } = useData();
+  const { data, ready, claims } = useData(); // 👈 include claims
   const navigate = useNavigate();
 
-  // NOTE: Firestore docs include both top-level fields and the raw Excel under `row`.
-  // We look for a date on either level.
   const ninetyDaysAgo = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 90);
@@ -83,7 +86,6 @@ function Home() {
 
   const parseDate = (raw) => {
     if (!raw) return null;
-    // allow DD/MM/YYYY
     const s = String(raw);
     const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
     if (m) {
@@ -143,7 +145,9 @@ function Home() {
         {ready && data.length === 0 ? (
           <div style={{ textAlign: "center", color: "#333", marginBottom: 8 }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>No sessions yet</div>
-            <div>Go to <strong>Admin Upload</strong> to add your latest Equimetre export.</div>
+            <div>
+              Go to <strong>Admin Upload</strong> to add your latest Equimetre export.
+            </div>
           </div>
         ) : null}
 
@@ -152,30 +156,33 @@ function Home() {
           onSelectHorse={(horse) => navigate(`/horse/${encodeURIComponent(horse)}`)}
         />
 
-        <Link
-          to="/admin/upload"
-          style={{
-            textDecoration: "none",
-            backgroundColor: "#11436e",
-            color: "#fff",
-            padding: "12px 24px",
-            fontSize: "1rem",
-            borderRadius: "8px",
-            border: "none",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-            width: "100%",
-            maxWidth: 360,
-            marginTop: 8,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0d3557")}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#11436e")}
-        >
-          ⬆️ Admin Upload
-        </Link>
+        {/* 👇 Only show if admin */}
+        {claims?.admin === true && (
+          <Link
+            to="/admin/upload"
+            style={{
+              textDecoration: "none",
+              backgroundColor: "#11436e",
+              color: "#fff",
+              padding: "12px 24px",
+              fontSize: "1rem",
+              borderRadius: "8px",
+              border: "none",
+              fontWeight: "bold",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              width: "100%",
+              maxWidth: 360,
+              marginTop: 8,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#0d3557")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#11436e")}
+          >
+            ⬆️ Admin Upload
+          </Link>
+        )}
       </div>
     </div>
   );
