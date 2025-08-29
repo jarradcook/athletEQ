@@ -1,17 +1,18 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+console.log("FB project:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBZPOXwGUp4eSPopcZwj_TM2VmUBcChqWc",
-  authDomain: "athletes-7e6a3.firebaseapp.com",
-  projectId: "athletes-7e6a3",
-  storageBucket: "athletes-7e6a3.firebasestorage.app",
-  messagingSenderId: "1010997648929",
-  appId: "1:1010997648929:web:1edbd3e7610956269b4d60"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
 
-// 👇 export this so the rest of the app can use Firebase Auth
 export const auth = getAuth(app);
+export const db = getFirestore(app);
